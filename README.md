@@ -1,13 +1,16 @@
-# 🎙️ Ứng Dụng Ghi Âm
+# 🎙️ Ứng Dụng Ghi Âm Nâng Cao
 
-Ứng dụng ghi âm đơn giản với giao diện đồ họa, hỗ trợ tùy chỉnh cấu hình âm thanh.
+Ứng dụng ghi âm chuyên nghiệp với giao diện đồ họa, hỗ trợ tùy chỉnh cấu hình, quản lý và phát lại bản ghi.
 
 ## ✨ Tính năng
 
-- ✅ Ghi âm với giao diện đẹp mắt
+- ✅ Ghi âm với giao diện đẹp mắt, dễ sử dụng
 - ✅ Tùy chỉnh cấu hình âm thanh trực tiếp trên giao diện
 - ✅ Hiển thị thời gian ghi âm real-time
-- ✅ Lưu file định dạng WAV
+- ✅ **Tự động lưu** file vào folder `recordings/`
+- ✅ **Quản lý bản ghi**: Xem danh sách các bản ghi gần đây
+- ✅ **Phát lại trực tiếp**: Nghe lại bản ghi ngay trên ứng dụng
+- ✅ **Xóa bản ghi**: Quản lý không gian lưu trữ
 - ✅ Ước tính dung lượng file trước khi ghi
 
 ## 🎛️ Cấu hình âm thanh
@@ -89,34 +92,57 @@ xu-ly-tieng-noi/
 ├── main.py              # Entry point - Khởi động ứng dụng
 ├── app.py               # Class ứng dụng chính
 ├── audio_recorder.py    # Logic ghi âm
+├── audio_player.py      # Logic phát âm thanh
 ├── audio_config.py      # Quản lý cấu hình âm thanh
 ├── ui_components.py     # Các UI components
 ├── settings_panel.py    # Panel cài đặt âm thanh
+├── recordings_panel.py  # Panel quản lý bản ghi
 ├── config.py            # Cấu hình constants
 ├── requirements.txt     # Python dependencies
+├── recordings/          # Folder chứa bản ghi (tự động tạo)
 └── README.md           # Tài liệu này
 ```
 
 ## 🎯 Hướng dẫn sử dụng
 
+### Ghi âm
+
 1. **Khởi động ứng dụng**: Chạy `python3 main.py`
 
-2. **Chọn cấu hình** (trước khi ghi):
-   - Chọn tần số mẫu phù hợp
+2. **Chọn cấu hình** (bên trái, trước khi ghi):
+   - Chọn tần số mẫu phù hợp (16kHz - 48kHz)
    - Chọn Mono/Stereo
-   - Chọn độ sâu bit
+   - Chọn độ sâu bit (16-bit/32-bit)
    - Xem ước tính dung lượng
 
 3. **Bắt đầu ghi âm**: 
    - Bấm nút "🔴 BẮT ĐẦU GHI ÂM"
    - Các cài đặt sẽ bị khóa khi đang ghi
+   - Thời gian ghi âm hiển thị real-time
 
-4. **Dừng ghi**: 
+4. **Dừng và Lưu**: 
    - Bấm nút "⏹️ DỪNG GHI ÂM"
+   - File sẽ **tự động lưu** vào folder `recordings/`
+   - Tên file: `recording_YYYYMMDD_HHMMSS.wav`
 
-5. **Lưu file**:
-   - Bấm nút "💾 LƯU FILE"
-   - Chọn vị trí và tên file
+### Quản lý và phát lại
+
+5. **Xem bản ghi** (bên phải):
+   - Danh sách tự động cập nhật sau mỗi lần ghi
+   - Hiển thị ngày giờ ghi âm
+
+6. **Phát lại bản ghi**:
+   - **Cách 1**: Double-click vào bản ghi
+   - **Cách 2**: Chọn bản ghi → Bấm nút "▶️ Phát"
+   - Trạng thái hiển thị "Đang phát bản ghi..."
+
+7. **Dừng phát**:
+   - Bấm nút "⏹️ Dừng" (trong panel bản ghi)
+
+8. **Xóa bản ghi**:
+   - Chọn bản ghi cần xóa
+   - Bấm nút "🗑️ Xóa"
+   - Xác nhận xóa
 
 ## 💻 Yêu cầu hệ thống
 
@@ -131,6 +157,28 @@ xu-ly-tieng-noi/
 - `scipy` - Lưu file WAV
 - `tkinter` - Giao diện (built-in với Python)
 
+## 🎨 Giao diện
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│              🎙️ ỨNG DỤNG GHI ÂM NÂNG CAO                      │
+├─────────────────────────────┬─────────────────────────────────┤
+│  ⚙️ CÀI ĐẶT ÂM THANH       │  📼 BẢN GHI ÂM GẦN ĐÂY          │
+│  Tần số mẫu: [44100 Hz ▼]  │  ┌─────────────────────────────┐│
+│  Số kênh: [Mono ▼]          │  │ 📌 03/11/2025 14:05:30     ││
+│  Bit depth: [32-bit ▼]      │  │ 📌 03/11/2025 13:45:12     ││
+│  📊 ~10.0 MB/phút            │  │ 📌 03/11/2025 12:30:45     ││
+│                              │  │ 📌 02/11/2025 18:20:00     ││
+│  Sẵn sàng ghi âm             │  └─────────────────────────────┘│
+│                              │                                 │
+│      00:00:00                │  [▶️ Phát] [⏹️ Dừng] [🗑️ Xóa]  │
+│                              │                                 │
+│  [🔴 BẮT ĐẦU GHI ÂM]        │  Tổng: 4 bản ghi                │
+│                              │                                 │
+│  WAV | 44100 Hz | Mono...   │                                 │
+└─────────────────────────────┴─────────────────────────────────┘
+```
+
 ## 🐛 Xử lý lỗi thường gặp
 
 ### "Invalid number of channels"
@@ -139,11 +187,21 @@ xu-ly-tieng-noi/
 
 ### "OSStatus -26276" hoặc lỗi SSL
 - **Nguyên nhân**: Python cũ hoặc thiếu certificates
-- **Giải pháp**: Nâng cấp Python lên 3.10+
+- **Giải pháp**: Nâng cấp Python lên 3.10+ (khuyến nghị 3.13)
 
 ### Ứng dụng không khởi động
 - Kiểm tra quyền microphone: System Settings → Privacy → Microphone
 - Đảm bảo đã kích hoạt virtual environment
+- Chạy: `python3 main.py` trong folder project
+
+### Không phát được âm thanh
+- Kiểm tra quyền speaker/audio output
+- Đảm bảo file WAV tồn tại trong folder `recordings/`
+- Thử với file ghi âm mới
+
+### Folder recordings không tự động tạo
+- Chạy lại ứng dụng, folder sẽ tự động được tạo
+- Hoặc tạo thủ công: `mkdir recordings`
 
 ## 📝 License
 

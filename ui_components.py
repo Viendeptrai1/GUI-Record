@@ -105,34 +105,6 @@ class RecordButton:
             )
 
 
-class SaveButton:
-    """Nút lưu file"""
-    
-    def __init__(self, parent, command):
-        self.button = tk.Button(
-            parent,
-            text="💾 LƯU FILE",
-            font=(FONT_FAMILY, BUTTON_FONT_SIZE, "bold"),
-            bg=PRIMARY_COLOR,
-            fg="white",
-            width=20,
-            height=2,
-            relief="raised",
-            cursor="hand2",
-            command=command,
-            state="disabled"
-        )
-    
-    def pack(self, **kwargs):
-        self.button.pack(**kwargs)
-    
-    def enable(self):
-        """Bật nút"""
-        self.button.config(state="normal")
-    
-    def disable(self):
-        """Tắt nút"""
-        self.button.config(state="disabled")
 
 
 class InfoLabel:
