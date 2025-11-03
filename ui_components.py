@@ -138,15 +138,22 @@ class SaveButton:
 class InfoLabel:
     """Nhãn thông tin"""
     
-    def __init__(self, parent):
+    def __init__(self, parent, audio_config):
+        self.audio_config = audio_config
         self.label = tk.Label(
             parent,
-            text=f"Tần số mẫu: {SAMPLE_RATE} Hz | Định dạng: WAV | Mono",
+            text="",
             font=(FONT_FAMILY, INFO_FONT_SIZE),
             bg=BG_COLOR,
             fg=SECONDARY_COLOR
         )
+        self.update_text()
     
     def pack(self, **kwargs):
         self.label.pack(**kwargs)
+    
+    def update_text(self):
+        """Cập nhật text dựa trên config"""
+        text = f"Định dạng: WAV | {self.audio_config.get_info_text()}"
+        self.label.config(text=text)
 

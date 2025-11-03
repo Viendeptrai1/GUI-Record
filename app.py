@@ -3,11 +3,13 @@ Module chính của ứng dụng
 """
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from audio_config import AudioConfig
 from audio_recorder import AudioRecorder
 from ui_components import (
     TitleLabel, StatusLabel, TimerLabel,
     RecordButton, SaveButton, InfoLabel
 )
+from settings_panel import SettingsPanel
 from config import *
 
 
@@ -16,7 +18,8 @@ class AudioRecorderApp:
     
     def __init__(self, root):
         self.root = root
-        self.recorder = AudioRecorder()
+        self.audio_config = AudioConfig()
+        self.recorder = AudioRecorder(self.audio_config)
         self._setup_window()
         self._create_ui()
     
@@ -31,11 +34,19 @@ class AudioRecorderApp:
         """Tạo giao diện người dùng"""
         # Tiêu đề
         title = TitleLabel(self.root)
-        title.pack(pady=20)
+        title.pack(pady=15)
+        
+        # Panel cài đặt âm thanh
+        self.settings_panel = SettingsPanel(
+            self.root, 
+            self.audio_config,
+            self._on_config_change
+        )
+        self.settings_panel.pack(pady=10, padx=20, fill="x")
         
         # Frame chính
         main_frame = tk.Frame(self.root, bg=BG_COLOR)
-        main_frame.pack(pady=10, padx=20, fill="both", expand=True)
+        main_frame.pack(pady=5, padx=20, fill="both", expand=True)
         
         # Trạng thái
         self.status_label = StatusLabel(main_frame)
@@ -43,11 +54,11 @@ class AudioRecorderApp:
         
         # Thời gian
         self.timer_label = TimerLabel(main_frame)
-        self.timer_label.pack(pady=20)
+        self.timer_label.pack(pady=15)
         
         # Frame nút điều khiển
         button_frame = tk.Frame(main_frame, bg=BG_COLOR)
-        button_frame.pack(pady=20)
+        button_frame.pack(pady=15)
         
         # Nút ghi âm
         self.record_button = RecordButton(button_frame, self.toggle_recording)
@@ -58,8 +69,8 @@ class AudioRecorderApp:
         self.save_button.pack(pady=5)
         
         # Thông tin
-        info = InfoLabel(main_frame)
-        info.pack(side="bottom", pady=10)
+        self.info_label = InfoLabel(main_frame, self.audio_config)
+        self.info_label.pack(side="bottom", pady=10)
     
     def toggle_recording(self):
         """Bật/tắt ghi âm"""
@@ -75,6 +86,7 @@ class AudioRecorderApp:
             self.record_button.set_recording_state(True)
             self.status_label.set_text("Đang ghi âm...", DANGER_COLOR)
             self.save_button.disable()
+            self.settings_panel.disable()  # Khóa cài đặt khi ghi âm
             self._update_timer()
         except Exception as e:
             messagebox.showerror("Lỗi", str(e))
@@ -85,6 +97,7 @@ class AudioRecorderApp:
         self.record_button.set_recording_state(False)
         self.status_label.set_text("Đã dừng ghi âm", WARNING_COLOR)
         self.save_button.enable()
+        self.settings_panel.enable()  # Mở lại cài đặt
     
     def _update_timer(self):
         """Cập nhật bộ đếm thời gian"""
@@ -126,4 +139,8 @@ class AudioRecorderApp:
         self.timer_label.reset()
         self.status_label.set_text("Sẵn sàng ghi âm", PRIMARY_COLOR)
         self.save_button.disable()
+    
+    def _on_config_change(self):
+        """Callback khi thay đổi cấu hình"""
+        self.info_label.update_text()
 

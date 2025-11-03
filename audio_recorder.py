@@ -7,13 +7,14 @@ from scipy.io.wavfile import write
 import threading
 import time
 from datetime import datetime
-from config import SAMPLE_RATE, CHANNELS, DTYPE, CHUNK_SIZE
+from config import CHUNK_SIZE
 
 
 class AudioRecorder:
     """Class quản lý việc ghi âm"""
     
-    def __init__(self):
+    def __init__(self, audio_config):
+        self.config = audio_config
         self.is_recording = False
         self.audio_data = []
         self.recording_thread = None
@@ -42,9 +43,9 @@ class AudioRecorder:
         """Hàm ghi âm chạy trong thread riêng"""
         try:
             with sd.InputStream(
-                samplerate=SAMPLE_RATE, 
-                channels=CHANNELS, 
-                dtype=DTYPE
+                samplerate=self.config.sample_rate, 
+                channels=self.config.channels, 
+                dtype=self.config.dtype
             ) as stream:
                 while self.is_recording:
                     data, _ = stream.read(CHUNK_SIZE)
@@ -71,11 +72,15 @@ class AudioRecorder:
             # Ghép các đoạn audio lại
             audio_array = np.concatenate(self.audio_data, axis=0)
             
-            # Chuẩn hóa và chuyển sang int16
-            audio_int16 = np.int16(audio_array * 32767)
+            # Chuyển đổi dữ liệu dựa trên dtype
+            if self.config.dtype == 'int16':
+                audio_data = audio_array
+            else:  # float32
+                # Chuẩn hóa và chuyển sang int16
+                audio_data = np.int16(audio_array * 32767)
             
             # Lưu file WAV
-            write(file_path, SAMPLE_RATE, audio_int16)
+            write(file_path, self.config.sample_rate, audio_data)
         except Exception as e:
             raise Exception(f"Lỗi khi lưu file: {str(e)}")
     
