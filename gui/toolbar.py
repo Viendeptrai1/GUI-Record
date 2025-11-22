@@ -16,6 +16,26 @@ class Toolbar(tk.Frame):
         
         self.btn_save = tk.Button(self, text="Save", command=self.callbacks['save'], state=tk.DISABLED)
         self.btn_save.pack(side=tk.LEFT, padx=2, pady=2)
+        
+        # Separator
+        tk.Label(self, text="|").pack(side=tk.LEFT, padx=5)
+        
+        # Zoom Controls
+        self.btn_zoom_in = tk.Button(self, text="Zoom In (+)", command=self.callbacks.get('zoom_in'), state=tk.DISABLED)
+        self.btn_zoom_in.pack(side=tk.LEFT, padx=2, pady=2)
+        
+        self.btn_zoom_out = tk.Button(self, text="Zoom Out (-)", command=self.callbacks.get('zoom_out'), state=tk.DISABLED)
+        self.btn_zoom_out.pack(side=tk.LEFT, padx=2, pady=2)
+        
+        self.btn_reset = tk.Button(self, text="Reset", command=self.callbacks.get('reset_view'), state=tk.DISABLED)
+        self.btn_reset.pack(side=tk.LEFT, padx=2, pady=2)
+        
+        # Pan Controls
+        self.btn_pan_left = tk.Button(self, text="<", command=self.callbacks.get('pan_left'), state=tk.DISABLED)
+        self.btn_pan_left.pack(side=tk.LEFT, padx=2, pady=2)
+        
+        self.btn_pan_right = tk.Button(self, text=">", command=self.callbacks.get('pan_right'), state=tk.DISABLED)
+        self.btn_pan_right.pack(side=tk.LEFT, padx=2, pady=2)
 
     def set_state(self, state):
         """
@@ -27,13 +47,23 @@ class Toolbar(tk.Frame):
             self.btn_stop.config(state=tk.DISABLED)
             self.btn_play.config(state=tk.DISABLED)
             self.btn_save.config(state=tk.DISABLED)
+            self._set_zoom_state(tk.DISABLED)
         elif state == 'recording':
             self.btn_record.config(state=tk.DISABLED)
             self.btn_stop.config(state=tk.NORMAL)
             self.btn_play.config(state=tk.DISABLED)
             self.btn_save.config(state=tk.DISABLED)
+            self._set_zoom_state(tk.DISABLED)
         elif state == 'has_data':
             self.btn_record.config(state=tk.NORMAL)
             self.btn_stop.config(state=tk.DISABLED)
             self.btn_play.config(state=tk.NORMAL)
             self.btn_save.config(state=tk.NORMAL)
+            self._set_zoom_state(tk.NORMAL)
+
+    def _set_zoom_state(self, state):
+        self.btn_zoom_in.config(state=state)
+        self.btn_zoom_out.config(state=state)
+        self.btn_reset.config(state=state)
+        self.btn_pan_left.config(state=state)
+        self.btn_pan_right.config(state=state)

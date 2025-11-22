@@ -33,6 +33,9 @@ class App(tk.Tk):
         self.current_view = 'waveform' # 'waveform', 'wideband', 'narrowband'
         self.show_pitch = tk.BooleanVar(value=False)
         
+        self.view_start = 0
+        self.view_end = 0 # Will be set when data is loaded
+        
         # GUI Layout
         self.create_menu()
         self.create_widgets()
@@ -69,7 +72,12 @@ class App(tk.Tk):
             'record': self.start_recording,
             'stop': self.stop_recording,
             'play': self.play_audio,
-            'save': self.save_audio
+            'save': self.save_audio,
+            'zoom_in': self.zoom_in,
+            'zoom_out': self.zoom_out,
+            'reset_view': self.reset_view,
+            'pan_left': self.pan_left,
+            'pan_right': self.pan_right
         }
         self.toolbar = Toolbar(self, callbacks)
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
@@ -104,8 +112,10 @@ class App(tk.Tk):
         if self.audio_data is None:
             return
             
+        xlim = (self.view_start, self.view_end)
+        
         if self.current_view == 'waveform':
-            self.plot_canvas.plot_waveform(self.audio_data, self.fs)
+            self.plot_canvas.plot_waveform(self.audio_data, self.fs, xlim=xlim)
         elif self.current_view in ['wideband', 'narrowband']:
             # Compute Spectrogram
             if self.current_view == 'wideband':
@@ -114,12 +124,52 @@ class App(tk.Tk):
                 params = self.analyzer.get_narrowband_params()
                 
             spec = self.analyzer.compute_spectrogram(self.audio_data, **params)
-            self.plot_canvas.plot_spectrogram(spec, self.fs, params['hop_length'])
+            self.plot_canvas.plot_spectrogram(spec, self.fs, params['hop_length'], xlim=xlim)
             
             # Compute and Overlay Pitch if enabled
             if self.show_pitch.get():
                 times, f0s = self.pitch_analyzer.compute_pitch(self.audio_data)
                 self.plot_canvas.plot_pitch(times, f0s)
+        
+        # Update Annotation Canvas View
+        self.annotation_canvas.set_view(self.view_start, self.view_end)
+
+    def zoom_in(self):
+        center = (self.view_start + self.view_end) / 2
+        duration = self.view_end - self.view_start
+        new_duration = duration * 0.8
+        self.view_start = max(0, center - new_duration / 2)
+        self.view_end = min(len(self.audio_data)/self.fs, center + new_duration / 2)
+        self.update_plot()
+
+    def zoom_out(self):
+        center = (self.view_start + self.view_end) / 2
+        duration = self.view_end - self.view_start
+        new_duration = duration * 1.25
+        max_duration = len(self.audio_data)/self.fs
+        self.view_start = max(0, center - new_duration / 2)
+        self.view_end = min(max_duration, center + new_duration / 2)
+        self.update_plot()
+
+    def reset_view(self):
+        self.view_start = 0
+        self.view_end = len(self.audio_data)/self.fs
+        self.update_plot()
+
+    def pan_left(self):
+        duration = self.view_end - self.view_start
+        shift = duration * 0.2
+        self.view_start = max(0, self.view_start - shift)
+        self.view_end = self.view_start + duration
+        self.update_plot()
+
+    def pan_right(self):
+        duration = self.view_end - self.view_start
+        shift = duration * 0.2
+        max_duration = len(self.audio_data)/self.fs
+        self.view_end = min(max_duration, self.view_end + shift)
+        self.view_start = self.view_end - duration
+        self.update_plot()
 
     def on_canvas_click(self, event):
         if self.audio_data is None or event.xdata is None:
@@ -169,6 +219,10 @@ class App(tk.Tk):
         self.toolbar.set_state('has_data')
         duration = len(self.audio_data)/self.fs
         self.status_var.set(f"Recorded {duration:.2f}s")
+        
+        # Initialize View
+        self.view_start = 0
+        self.view_end = duration
         
         # Initialize TextGrid
         self.textgrid = TextGrid(0, duration)

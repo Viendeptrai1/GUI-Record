@@ -25,7 +25,7 @@ class PlotCanvas(tk.Frame):
             del self.cbar
         self.ax.clear()
 
-    def plot_waveform(self, data, fs):
+    def plot_waveform(self, data, fs, xlim=None):
         self.clear_plot()
         time = np.arange(len(data)) / fs
         self.ax.plot(time, data)
@@ -33,9 +33,11 @@ class PlotCanvas(tk.Frame):
         self.ax.set_xlabel("Time (s)")
         self.ax.set_ylabel("Amplitude")
         self.ax.grid(True)
+        if xlim:
+            self.ax.set_xlim(xlim)
         self.canvas.draw()
 
-    def plot_spectrogram(self, spec_db, fs, hop_length):
+    def plot_spectrogram(self, spec_db, fs, hop_length, xlim=None):
         self.clear_plot()
         
         # Calculate time and frequency axes
@@ -53,6 +55,9 @@ class PlotCanvas(tk.Frame):
         self.ax.set_xlabel("Time (s)")
         self.ax.set_ylabel("Frequency (Hz)")
         
+        if xlim:
+            self.ax.set_xlim(xlim)
+            
         # Add colorbar
         self.cbar = self.figure.colorbar(img, ax=self.ax, format='%+2.0f dB')
         

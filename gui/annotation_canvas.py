@@ -10,6 +10,9 @@ class AnnotationCanvas(tk.Canvas):
         self.width = width
         self.height = height
         
+        self.view_start = 0
+        self.view_end = duration if duration > 0 else 1
+        
         self.bind("<Configure>", self.on_resize)
         self.bind("<Button-1>", self.on_click)
         self.bind("<Double-Button-1>", self.on_double_click)
@@ -21,6 +24,13 @@ class AnnotationCanvas(tk.Canvas):
     def set_textgrid(self, textgrid, duration):
         self.textgrid = textgrid
         self.duration = duration
+        self.view_start = 0
+        self.view_end = duration
+        self.draw()
+        
+    def set_view(self, start, end):
+        self.view_start = max(0, start)
+        self.view_end = min(self.duration, end)
         self.draw()
 
     def on_resize(self, event):
@@ -29,12 +39,14 @@ class AnnotationCanvas(tk.Canvas):
         self.draw()
 
     def time_to_x(self, time):
-        if self.duration == 0: return 0
-        return (time / self.duration) * self.width
+        view_duration = self.view_end - self.view_start
+        if view_duration <= 0: return 0
+        return ((time - self.view_start) / view_duration) * self.width
 
     def x_to_time(self, x):
+        view_duration = self.view_end - self.view_start
         if self.width == 0: return 0
-        return (x / self.width) * self.duration
+        return self.view_start + (x / self.width) * view_duration
 
     def draw(self):
         self.delete("all")
@@ -43,6 +55,10 @@ class AnnotationCanvas(tk.Canvas):
 
         # Draw intervals
         for interval in self.textgrid.intervals:
+            # Only draw visible intervals
+            if interval.xmax < self.view_start or interval.xmin > self.view_end:
+                continue
+                
             x1 = self.time_to_x(interval.xmin)
             x2 = self.time_to_x(interval.xmax)
             
@@ -52,7 +68,9 @@ class AnnotationCanvas(tk.Canvas):
             
             # Draw text
             center_x = (x1 + x2) / 2
-            self.create_text(center_x, self.height/2, text=interval.text, fill="black", font=("Arial", 12))
+            # Clip text drawing to canvas
+            if 0 <= center_x <= self.width:
+                self.create_text(center_x, self.height/2, text=interval.text, fill="black", font=("Arial", 12))
 
     def on_click(self, event):
         # Check if clicked near a boundary for dragging?
