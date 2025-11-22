@@ -61,3 +61,28 @@ class TextGrid:
             if interval.xmin <= time <= interval.xmax:
                 return interval
         return None
+
+    def to_json(self, filepath):
+        import json
+        data = {
+            "xmin": self.xmin,
+            "xmax": self.xmax,
+            "intervals": [
+                {"xmin": i.xmin, "xmax": i.xmax, "text": i.text}
+                for i in self.intervals
+            ]
+        }
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+
+    @staticmethod
+    def from_json(filepath):
+        import json
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        tg = TextGrid(data["xmin"], data["xmax"])
+        tg.intervals = []
+        for i in data["intervals"]:
+            tg.intervals.append(Interval(i["xmin"], i["xmax"], i["text"]))
+        return tg

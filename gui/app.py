@@ -43,6 +43,14 @@ class App(tk.Tk):
     def create_menu(self):
         menubar = tk.Menu(self)
         
+        # File Menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Open TextGrid...", command=self.load_textgrid)
+        file_menu.add_command(label="Save TextGrid...", command=self.save_textgrid)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit)
+        menubar.add_cascade(label="File", menu=file_menu)
+        
         # Analysis Menu
         analysis_menu = tk.Menu(menubar, tearoff=0)
         analysis_menu.add_command(label="Show Waveform", command=lambda: self.switch_view('waveform'))
@@ -181,3 +189,28 @@ class App(tk.Tk):
             if filename:
                 save_wav(filename, self.audio_data, self.fs)
                 self.status_var.set(f"Saved to {filename}")
+
+    def load_textgrid(self):
+        filename = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+        if filename:
+            try:
+                self.textgrid = TextGrid.from_json(filename)
+                # We need to know duration to set up canvas properly. 
+                # Assuming loaded textgrid matches current audio or just use textgrid's max
+                duration = self.textgrid.xmax
+                self.annotation_canvas.set_textgrid(self.textgrid, duration)
+                self.status_var.set(f"Loaded TextGrid from {filename}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load TextGrid: {e}")
+
+    def save_textgrid(self):
+        if self.textgrid:
+            filename = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+            if filename:
+                try:
+                    self.textgrid.to_json(filename)
+                    self.status_var.set(f"Saved TextGrid to {filename}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save TextGrid: {e}")
+        else:
+            messagebox.showwarning("Warning", "No TextGrid to save!")
