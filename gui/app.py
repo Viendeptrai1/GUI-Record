@@ -10,12 +10,14 @@ from utils.file_io import save_wav, load_wav
 from analysis.spectrogram import SpectrogramAnalyzer
 from analysis.pitch import PitchAnalyzer
 from analysis.lpc import LPCAnalyzer
+from annotation.textgrid import TextGrid
+from gui.annotation_canvas import AnnotationCanvas
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Speech Processing App (Mini-Praat)")
-        self.geometry("800x600")
+        self.geometry("800x700") # Increased height
         
         # Audio components
         self.recorder = AudioRecorder()
@@ -26,6 +28,8 @@ class App(tk.Tk):
         
         self.audio_data = None
         self.fs = 16000
+        self.textgrid = None
+        
         self.current_view = 'waveform' # 'waveform', 'wideband', 'narrowband'
         self.show_pitch = tk.BooleanVar(value=False)
         
@@ -67,11 +71,22 @@ class App(tk.Tk):
         self.plot_canvas = PlotCanvas(self)
         self.plot_canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
+        # Annotation Area
+        self.annotation_canvas = AnnotationCanvas(self, None, 0)
+        self.annotation_canvas.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
+        # Bind Shift+Click for editing label
+        self.annotation_canvas.bind("<Shift-Button-1>", self.on_annotation_shift_click)
+        
         # Status Bar
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
         self.status_bar = tk.Label(self, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def on_annotation_shift_click(self, event):
+        if self.textgrid:
+            time = self.annotation_canvas.x_to_time(event.x)
+            self.annotation_canvas.edit_label(time)
 
     def switch_view(self, view_type):
         self.current_view = view_type
@@ -144,7 +159,12 @@ class App(tk.Tk):
         self.status_var.set("Processing...")
         self.audio_data = self.recorder.stop_recording()
         self.toolbar.set_state('has_data')
-        self.status_var.set(f"Recorded {len(self.audio_data)/self.fs:.2f}s")
+        duration = len(self.audio_data)/self.fs
+        self.status_var.set(f"Recorded {duration:.2f}s")
+        
+        # Initialize TextGrid
+        self.textgrid = TextGrid(0, duration)
+        self.annotation_canvas.set_textgrid(self.textgrid, duration)
         
         # Update Plot
         self.update_plot()
