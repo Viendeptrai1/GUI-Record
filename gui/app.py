@@ -8,6 +8,8 @@ from audio.player import AudioPlayer
 from utils.file_io import save_wav, load_wav
 
 from analysis.spectrogram import SpectrogramAnalyzer
+from analysis.pitch import PitchAnalyzer
+from analysis.lpc import LPCAnalyzer
 
 class App(tk.Tk):
     def __init__(self):
@@ -19,14 +21,20 @@ class App(tk.Tk):
         self.recorder = AudioRecorder()
         self.player = AudioPlayer()
         self.analyzer = SpectrogramAnalyzer()
+        self.pitch_analyzer = PitchAnalyzer()
+        self.lpc_analyzer = LPCAnalyzer()
         
         self.audio_data = None
         self.fs = 16000
         self.current_view = 'waveform' # 'waveform', 'wideband', 'narrowband'
+        self.show_pitch = tk.BooleanVar(value=False)
         
         # GUI Layout
         self.create_menu()
         self.create_widgets()
+        
+        # Bind events
+        self.plot_canvas.canvas.mpl_connect('button_press_event', self.on_canvas_click)
         
     def create_menu(self):
         menubar = tk.Menu(self)
@@ -36,6 +44,9 @@ class App(tk.Tk):
         analysis_menu.add_command(label="Show Waveform", command=lambda: self.switch_view('waveform'))
         analysis_menu.add_command(label="Show Wideband Spectrogram", command=lambda: self.switch_view('wideband'))
         analysis_menu.add_command(label="Show Narrowband Spectrogram", command=lambda: self.switch_view('narrowband'))
+        analysis_menu.add_separator()
+        analysis_menu.add_checkbutton(label="Show Pitch Contour", onvalue=True, offvalue=False, 
+                                      variable=self.show_pitch, command=self.update_plot)
         menubar.add_cascade(label="Analysis", menu=analysis_menu)
         
         self.config(menu=menubar)
@@ -72,14 +83,57 @@ class App(tk.Tk):
             
         if self.current_view == 'waveform':
             self.plot_canvas.plot_waveform(self.audio_data, self.fs)
-        elif self.current_view == 'wideband':
-            params = self.analyzer.get_wideband_params()
+        elif self.current_view in ['wideband', 'narrowband']:
+            # Compute Spectrogram
+            if self.current_view == 'wideband':
+                params = self.analyzer.get_wideband_params()
+            else:
+                params = self.analyzer.get_narrowband_params()
+                
             spec = self.analyzer.compute_spectrogram(self.audio_data, **params)
             self.plot_canvas.plot_spectrogram(spec, self.fs, params['hop_length'])
-        elif self.current_view == 'narrowband':
-            params = self.analyzer.get_narrowband_params()
-            spec = self.analyzer.compute_spectrogram(self.audio_data, **params)
-            self.plot_canvas.plot_spectrogram(spec, self.fs, params['hop_length'])
+            
+            # Compute and Overlay Pitch if enabled
+            if self.show_pitch.get():
+                times, f0s = self.pitch_analyzer.compute_pitch(self.audio_data)
+                self.plot_canvas.plot_pitch(times, f0s)
+
+    def on_canvas_click(self, event):
+        if self.audio_data is None or event.xdata is None:
+            return
+            
+        # Only trigger LPC if we are in Spectrogram view
+        if self.current_view in ['wideband', 'narrowband']:
+            time_point = event.xdata
+            sample_idx = int(time_point * self.fs)
+            
+            # Extract a small frame around the click (e.g., 30ms)
+            frame_len = int(0.03 * self.fs)
+            start = max(0, sample_idx - frame_len // 2)
+            end = min(len(self.audio_data), start + frame_len)
+            frame = self.audio_data[start:end]
+            
+            if len(frame) < frame_len:
+                return
+                
+            # Compute LPC
+            a, g = self.lpc_analyzer.compute_lpc(frame)
+            freqs, envelope = self.lpc_analyzer.get_spectral_envelope(a, g)
+            formants = self.lpc_analyzer.get_formants(a)
+            
+            # Open a new window or plot on the same canvas?
+            # For now, let's plot on the same canvas but replace the view temporarily
+            # Or better, create a popup window for LPC slice
+            self.show_lpc_popup(freqs, envelope, formants, time_point)
+
+    def show_lpc_popup(self, freqs, envelope, formants, time_point):
+        popup = tk.Toplevel(self)
+        popup.title(f"LPC Analysis at {time_point:.3f}s")
+        popup.geometry("600x400")
+        
+        canvas = PlotCanvas(popup)
+        canvas.pack(fill=tk.BOTH, expand=True)
+        canvas.plot_lpc(freqs, envelope, formants)
 
     def start_recording(self):
         self.status_var.set("Recording...")
