@@ -235,6 +235,18 @@ class App(tk.Tk):
         if self.audio_data is not None:
             self.status_var.set("Playing...")
             self.player.play(self.audio_data, self.fs)
+            self.update_cursor()
+
+    def update_cursor(self):
+        if self.player.is_playing:
+            current_time = self.player.get_current_time()
+            self.plot_canvas.draw_cursor(current_time)
+            self.annotation_canvas.draw_cursor(current_time)
+            self.after(50, self.update_cursor) # Update every 50ms
+        else:
+            self.status_var.set("Ready")
+            self.plot_canvas.clear_cursor()
+            self.annotation_canvas.delete("cursor")
             self.status_var.set("Ready")
 
     def save_audio(self):

@@ -72,10 +72,19 @@ class AnnotationCanvas(tk.Canvas):
             if 0 <= center_x <= self.width:
                 self.create_text(center_x, self.height/2, text=interval.text, fill="black", font=("Arial", 12))
 
+    def draw_cursor(self, time):
+        self.delete("cursor")
+        
+        # Only draw if within view
+        if time < self.view_start or time > self.view_end:
+            return
+            
+        x = self.time_to_x(time)
+        self.create_line(x, 0, x, self.height, fill="red", width=2, tags="cursor")
+
     def on_click(self, event):
         # Check if clicked near a boundary for dragging?
-        time = self.x_to_time(event.x)
-        # For now just store click time
+        # For now, just handle selection or nothing
         pass
 
     def on_double_click(self, event):

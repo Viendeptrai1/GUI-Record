@@ -64,25 +64,15 @@ class PlotCanvas(tk.Frame):
         self.canvas.draw()
 
     def plot_pitch(self, times, f0s):
-        # Filter unvoiced (0)
-        times_v = times[f0s > 0]
-        f0s_v = f0s[f0s > 0]
-        
-        # Plot on a secondary axis if needed, or just overlay
-        # For simplicity, overlaying on Spectrogram (which is Hz vs Time)
-        self.ax.plot(times_v, f0s_v, color='cyan', linewidth=2, label='Pitch (F0)')
+        # Overlay pitch contour
+        # We need to create a twin axis for pitch if we want a different scale, 
+        # but for simplicity, let's just plot it on the same axis or a twinx
+        # Since spectrogram is freq vs time, we can plot pitch (Hz) directly on it.
+        self.ax.plot(times, f0s, color='cyan', linewidth=2, label='Pitch (F0)')
         self.ax.legend(loc='upper right')
         self.canvas.draw()
 
     def plot_lpc(self, freqs, envelope, formants):
-        # Plot LPC envelope on a new figure or overlay?
-        # Usually LPC is a slice at a specific time, so it's Amplitude vs Frequency
-        # We should probably clear and draw this as a 2D plot
-        self.clear_plot()
-        
-        self.ax.plot(freqs, envelope, color='red', linewidth=2, label='LPC Envelope')
-        
-        # Mark formants
         for i, f in enumerate(formants[:3]): # Show first 3 formants
             self.ax.axvline(x=f, color='blue', linestyle='--', alpha=0.7)
             self.ax.text(f, np.max(envelope), f"F{i+1}={int(f)}", rotation=90, verticalalignment='top')
@@ -93,3 +83,24 @@ class PlotCanvas(tk.Frame):
         self.ax.grid(True)
         self.ax.legend()
         self.canvas.draw()
+
+    def draw_cursor(self, time):
+        # Remove previous cursor if exists
+        if hasattr(self, 'cursor_line') and self.cursor_line:
+            try:
+                self.cursor_line.remove()
+            except:
+                pass
+        
+        # Draw new cursor
+        self.cursor_line = self.ax.axvline(x=time, color='red', linewidth=1.5)
+        self.canvas.draw()
+        
+    def clear_cursor(self):
+        if hasattr(self, 'cursor_line') and self.cursor_line:
+            try:
+                self.cursor_line.remove()
+                self.cursor_line = None
+                self.canvas.draw()
+            except:
+                pass
